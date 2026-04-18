@@ -1285,7 +1285,7 @@ function openModalDesejo(id){document.getElementById('desejo-edit-id').value=id!
 function closeModalDesejo(e){if(!e||e.target===document.getElementById('modal-desejo'))document.getElementById('modal-desejo').classList.remove('open')}
 function editDesejo(i){openModalDesejo(i)}
 function deleteDesejo(i){if(!confirm('Remover?'))return;desejos.splice(i,1);saveDesejos();renderDesejos()}
-function salvarDesejo(){const n=document.getElementById('d-nome').value.trim();if(!n){showToast('⚠️ Digite o nome');return}const d={nome:n,categoria:document.getElementById('d-cat').value,prioridade:document.getElementById('d-pri').value,preco:document.getElementById('d-preco').value.trim(),status:document.getElementById('d-status').value,link:document.getElementById('d-link').value.trim(),criadoEm:new Date().toISOString()};const eid=document.getElementById('desejo-edit-id').value;if(eid!=='')desejos[parseInt(eid)]=d;else desejos.unshift(d);saveDesejos();closeModalDesejo();renderDesejos();showToast('✅ Item salvo!')}
+function salvarDesejo(){const n=document.getElementById('d-nome').value.trim();if(!n){showToast('⚠️ Digite o nome');return}const eid=document.getElementById('desejo-edit-id').value;const original=eid!==''?desejos[parseInt(eid)]:null;const d={nome:n,categoria:document.getElementById('d-cat').value,prioridade:document.getElementById('d-pri').value,preco:document.getElementById('d-preco').value.trim(),status:document.getElementById('d-status').value,link:document.getElementById('d-link').value.trim(),criadoEm:original?original.criadoEm:new Date().toISOString()};if(eid!=='')desejos[parseInt(eid)]=d;else desejos.unshift(d);saveDesejos();closeModalDesejo();renderDesejos();showToast('✅ Item salvo!')}
 
 // ── Notas ─────────────────────────────────────────────────────────────────────
 let notas=[],notaFiltro='todas';const NOTAS_KEY='nutrime_notas';
@@ -1452,9 +1452,8 @@ async function loadData(){
       // Sync desejos: Sheets vence se tiver dados; senão mantém localStorage
       if(data.desejos&&data.desejos.length>0){
         desejos=data.desejos;localStorage.setItem(DESEJOS_KEY,JSON.stringify(desejos));
-        if(currentModule==='desejos')renderPlanejamento();
+        if(currentModule==='desejos')renderDesejos();
       } else if(desejos.length>0){
-        // localStorage tem dados, Sheets está vazio → sincroniza Sheets com localStorage
         apiPost({action:'saveDesejos',desejos}).catch(()=>{});
       }
       if(data.notas&&data.notas.length>0){
@@ -1462,6 +1461,12 @@ async function loadData(){
         if(currentModule==='notas')renderNotas();
       } else if(notas.length>0){
         apiPost({action:'saveNotas',notas}).catch(()=>{});
+      }
+      if(data.plano&&typeof data.plano==='object'&&!Array.isArray(data.plano)&&Object.keys(data.plano).length>0){
+        planoMes=data.plano;localStorage.setItem(PLANO_KEY,JSON.stringify(planoMes));
+        if(currentModule==='desejos')renderPlanejamento();
+      } else if(Object.keys(planoMes).length>0){
+        apiPost({action:'savePlano',plano:planoMes}).catch(()=>{});
       }state.syncedAt=new Date().toLocaleTimeString('pt-BR');document.getElementById('sync-status').textContent='Último sync: '+state.syncedAt+' · '+state.registros.length+' registros';const tr=state.registros.find(r=>r.date===today);if(tr){applyReg(tr);localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,reg:tr}))}calcDefaultExpanded();renderRefeicoes();renderWater();setSyncIcon('ok');showToast('✅ Sincronizado — '+state.registros.length+' registros')}}
   catch(e){
     setSyncIcon('err');
@@ -1965,8 +1970,10 @@ function loadPlano(){
   }catch(e){planoMes={}}
   if(!planoMesAtual)planoMesAtual=todayYM();
 }
-function savePlano(){
+async function savePlano(){
   localStorage.setItem(PLANO_KEY,JSON.stringify(planoMes));
+  try{const r=await apiPost({action:'savePlano',plano:planoMes});if(!r.ok)throw new Error(r.error||'erro')}
+  catch(e){showToast('⚠️ Planejamento não sincronizado: '+e.message)}
 }
 function getMesData(ym){
   if(!planoMes[ym])planoMes[ym]={orcamento:0,itens:[]};
