@@ -500,6 +500,7 @@ textarea.ni{resize:none}
       <div class="dr-item on" id="drawer-saude" onclick="switchModule('saude')"><span class="mi s16">favorite</span>Saúde</div>
       <div class="dr-item" id="drawer-desejos" onclick="switchModule('desejos')"><span class="mi s16">shopping_cart</span>Lista de Compras</div>
       <div class="dr-item" id="drawer-notas" onclick="switchModule('notas')"><span class="mi s16">edit_note</span>Anotações</div>
+      <div class="dr-item" id="drawer-lugares" onclick="switchModule('lugares')"><span class="mi s16">location_on</span>Lugares</div>
       <div class="dr-sep"></div>
       <div class="dr-item" onclick="switchModule('saude');showSaudePage('perfil');closeDrawer()"><span class="mi s16">person</span>Perfil &amp; Sync</div>
     </div>
@@ -841,6 +842,66 @@ textarea.ni{resize:none}
   <div id="notas-list" style="display:flex;flex-direction:column;gap:8px;padding-bottom:20px"></div>
 </div>
 
+<!-- ── MÓDULO LUGARES ── -->
+<div id="module-lugares" class="module pw" style="display:none">
+
+  <!-- ABA LISTA -->
+  <div id="lugares-aba-lista" style="padding-bottom:80px">
+    <div class="ph ph-row" style="margin-top:14px">
+      <div><div class="ph-title">Lugares a Visitar</div><div class="ph-sub" id="lugares-count">0 lugares</div></div>
+      <button class="fab" onclick="openModalLugar()"><span class="mi s20">add</span></button>
+    </div>
+    <div class="fpills" id="l-filters">
+      <button class="fp on" onclick="setLugarFiltro('todos')">Todos</button>
+      <button class="fp" onclick="setLugarFiltro('viagem')">✈️ Viagem</button>
+      <button class="fp" onclick="setLugarFiltro('restaurante')">🍽️ Restaurante</button>
+      <button class="fp" onclick="setLugarFiltro('cafe')">☕ Café</button>
+      <button class="fp" onclick="setLugarFiltro('museu')">🏛️ Museu</button>
+      <button class="fp" onclick="setLugarFiltro('evento')">🎭 Evento</button>
+    </div>
+    <div id="lugares-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+
+  <!-- ABA VISITADOS -->
+  <div id="lugares-aba-visitados" style="display:none;padding-bottom:80px">
+    <div class="ph" style="margin-top:14px">
+      <div class="ph-title">Visitados</div>
+      <div class="ph-sub" id="visitados-count">0 visitados</div>
+    </div>
+    <div id="visitados-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+
+  <!-- ABA DASHBOARD -->
+  <div id="lugares-aba-dash" style="display:none;padding-bottom:80px">
+    <div class="ph" style="margin-top:14px">
+      <div class="ph-title">Visão Geral</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div class="card" style="text-align:center;padding:16px 8px">
+        <div id="ldash-total" style="font-size:28px;font-weight:700;color:var(--hi)">0</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Total</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px 8px">
+        <div id="ldash-visitados" style="font-size:28px;font-weight:700;color:var(--hi)">0</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Visitados</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px 8px">
+        <div id="ldash-pendentes" style="font-size:28px;font-weight:700;color:var(--amber)">0</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Quero ir</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px 8px">
+        <div id="ldash-pct" style="font-size:28px;font-weight:700;color:var(--hi)">0%</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Concluído</div>
+      </div>
+    </div>
+    <div class="card" style="padding:16px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:12px;color:var(--text-2)">Por tipo</div>
+      <canvas id="chart-lugares" height="160"></canvas>
+    </div>
+  </div>
+
+</div>
+
 </div><!-- /app -->
 
 <!-- BOTTOM NAV -->
@@ -858,6 +919,15 @@ textarea.ni{resize:none}
     <button class="ntab on" id="cnav-plano" onclick="setComprasTab('plano')"><span class="mi s20">calendar_month</span><span class="nl">Planejamento</span></button>
     <button class="ntab" id="cnav-todos" onclick="setComprasTab('todos')"><span class="mi s20">list</span><span class="nl">Todos os Itens</span></button>
     <button class="ntab" id="cnav-dash" onclick="setComprasTab('dash')"><span class="mi s20">bar_chart</span><span class="nl">Visão Geral</span></button>
+  </div>
+</nav>
+
+<!-- BOTTOM NAV LUGARES -->
+<nav id="bnav-lugares" style="display:none">
+  <div class="bnav-row">
+    <button class="ntab on" id="lnav-lista" onclick="setLugaresTab('lista')"><span class="mi s20">favorite</span><span class="nl">Quero ir</span></button>
+    <button class="ntab" id="lnav-visitados" onclick="setLugaresTab('visitados')"><span class="mi s20">check_circle</span><span class="nl">Visitados</span></button>
+    <button class="ntab" id="lnav-dash" onclick="setLugaresTab('dash')"><span class="mi s20">bar_chart</span><span class="nl">Visão Geral</span></button>
   </div>
 </nav>
 
@@ -975,6 +1045,48 @@ textarea.ni{resize:none}
   </div>
 </div>
 
+<!-- MODAL LUGAR -->
+<div id="modal-lugar" class="mbg" onclick="closeModalLugar(event)">
+  <div class="msheet">
+    <div class="mhandle"></div>
+    <div class="mhead"><h3 class="mtitle" id="modal-lugar-title">Novo lugar</h3><button class="ib" onclick="closeModalLugar()"><span class="mi">close</span></button></div>
+    <input type="hidden" id="lugar-edit-id"/>
+    <div class="mform">
+      <div><label class="nl">Nome *</label><input type="text" id="l-nome" placeholder="Nome do lugar..." class="ni"/></div>
+      <div class="frow">
+        <div><label class="nl">Tipo</label><select id="l-tipo" class="ni"><option value="viagem">✈️ Viagem</option><option value="restaurante">🍽️ Restaurante</option><option value="cafe">☕ Café</option><option value="museu">🏛️ Museu/Cultura</option><option value="evento">🎭 Evento</option><option value="outro">📍 Outro</option></select></div>
+        <div><label class="nl">Prioridade</label><select id="l-pri" class="ni"><option value="muito">🔴 Urgente</option><option value="quero">🟡 Normal</option><option value="talvez">🟢 Sem pressa</option></select></div>
+      </div>
+      <div class="frow">
+        <div><label class="nl">Cidade / Local</label><input type="text" id="l-cidade" placeholder="São Paulo, Paris..." class="ni"/></div>
+        <div><label class="nl">Status</label><select id="l-status" class="ni" onchange="toggleVisitadoFields()"><option value="quero">🗺️ Quero ir</option><option value="planejando">⏳ Planejando</option><option value="visitei">✅ Visitei</option></select></div>
+      </div>
+      <div class="frow">
+        <div><label class="nl">Custo estimado</label><input type="text" id="l-custo" placeholder="R$ 0,00" class="ni"/></div>
+        <div><label class="nl">Link</label><input type="url" id="l-link" placeholder="Maps, site..." class="ni"/></div>
+      </div>
+      <div id="l-visitado-fields" style="display:none">
+        <div style="margin-bottom:10px">
+          <label class="nl">Avaliação</label>
+          <div id="l-stars" style="display:flex;gap:6px;margin-top:4px">
+            <button type="button" class="ib l-star" data-v="1" onclick="setAvaliacaoLugar(1)" style="font-size:20px;background:none;border:none;padding:4px">⭐</button>
+            <button type="button" class="ib l-star" data-v="2" onclick="setAvaliacaoLugar(2)" style="font-size:20px;background:none;border:none;padding:4px">⭐</button>
+            <button type="button" class="ib l-star" data-v="3" onclick="setAvaliacaoLugar(3)" style="font-size:20px;background:none;border:none;padding:4px">⭐</button>
+            <button type="button" class="ib l-star" data-v="4" onclick="setAvaliacaoLugar(4)" style="font-size:20px;background:none;border:none;padding:4px">⭐</button>
+            <button type="button" class="ib l-star" data-v="5" onclick="setAvaliacaoLugar(5)" style="font-size:20px;background:none;border:none;padding:4px">⭐</button>
+          </div>
+          <input type="hidden" id="l-avaliacao" value="0"/>
+        </div>
+        <div class="frow">
+          <div><label class="nl">Data da visita</label><input type="date" id="l-visitadoEm" class="ni"/></div>
+        </div>
+        <div><label class="nl">Comentário</label><textarea id="l-comentario" class="ni" rows="2" placeholder="Como foi?" style="resize:none"></textarea></div>
+      </div>
+    </div>
+    <button class="msub" onclick="salvarLugar()">Salvar lugar</button>
+  </div>
+</div>
+
 <!-- MODAL NOTA -->
 <div id="modal-nota" class="mbg" onclick="closeModalNota(event)">
   <div class="msheet">
@@ -1049,11 +1161,13 @@ function switchModule(mod){
   else{document.getElementById('module-saude').style.display='block';document.getElementById('module-saude').classList.add('active');showSaudePage('perfil')}
   document.getElementById('bnav').style.display=mod==='saude'?'':'none';
   document.getElementById('bnav-compras').style.display=mod==='desejos'?'':'none';
+  document.getElementById('bnav-lugares').style.display=mod==='lugares'?'':'none';
   const hdrTitle=document.getElementById('header-title');
-  const labels={saude:'Saúde',desejos:'Compras',notas:'Anotações'};
+  const labels={saude:'Saúde',desejos:'Compras',notas:'Anotações',lugares:'Lugares'};
   hdrTitle.textContent=labels[mod]||mod;
-  ['saude','desejos','notas'].forEach(m=>{const b=document.getElementById('drawer-'+m);if(b)b.classList.toggle('on',m===mod)});
+  ['saude','desejos','notas','lugares'].forEach(m=>{const b=document.getElementById('drawer-'+m);if(b)b.classList.toggle('on',m===mod)});
   if(mod==='desejos'){loadPlano();setComprasTab('plano');}if(mod==='notas')renderNotas();
+  if(mod==='lugares'){loadLugares();setLugaresTab('lista');}
 }
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
@@ -1467,7 +1581,14 @@ async function loadData(){
         if(currentModule==='desejos')renderPlanejamento();
       } else if(Object.keys(planoMes).length>0){
         apiPost({action:'savePlano',plano:planoMes}).catch(()=>{});
-      }state.syncedAt=new Date().toLocaleTimeString('pt-BR');document.getElementById('sync-status').textContent='Último sync: '+state.syncedAt+' · '+state.registros.length+' registros';const tr=state.registros.find(r=>r.date===today);if(tr){applyReg(tr);localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,reg:tr}))}calcDefaultExpanded();renderRefeicoes();renderWater();setSyncIcon('ok');showToast('✅ Sincronizado — '+state.registros.length+' registros')}}
+      }
+      if(data.lugares&&data.lugares.length>0){
+        lugares=data.lugares;localStorage.setItem(LUGARES_KEY,JSON.stringify(lugares));
+        if(currentModule==='lugares')renderLugares();
+      } else if(lugares.length>0){
+        apiPost({action:'saveLugares',lugares}).catch(()=>{});
+      }
+      state.syncedAt=new Date().toLocaleTimeString('pt-BR');document.getElementById('sync-status').textContent='Último sync: '+state.syncedAt+' · '+state.registros.length+' registros';const tr=state.registros.find(r=>r.date===today);if(tr){applyReg(tr);localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,reg:tr}))}calcDefaultExpanded();renderRefeicoes();renderWater();setSyncIcon('ok');showToast('✅ Sincronizado — '+state.registros.length+' registros')}}
   catch(e){
     setSyncIcon('err');
     console.error('[loadData] ERRO:',e);
@@ -1475,6 +1596,194 @@ async function loadData(){
     document.getElementById('sync-status').textContent='Erro: '+msg.slice(0,60);
     showToast('⚠️ '+msg.slice(0,50),3500);
   }
+}
+
+// ── Lugares ───────────────────────────────────────────────────────────────────
+let lugares=[],lugarFiltro='todos';const LUGARES_KEY='nutrime_lugares';
+const TIPO_EMOJI={viagem:'✈️',restaurante:'🍽️',cafe:'☕',museu:'🏛️',evento:'🎭',outro:'📍'};
+const TIPO_LABEL={viagem:'Viagem',restaurante:'Restaurante',cafe:'Café',museu:'Museu/Cultura',evento:'Evento',outro:'Outro'};
+const LPRI_LABEL={muito:'🔴 Urgente',quero:'🟡 Normal',talvez:'🟢 Sem pressa'};
+const LPRI_CLS={muito:'pri-a',quero:'pri-b',talvez:'pri-c'};
+const LSTATUS_LABEL={quero:'🗺️ Quero ir',planejando:'⏳ Planejando',visitei:'✅ Visitei'};
+
+function loadLugares(){try{lugares=JSON.parse(localStorage.getItem(LUGARES_KEY)||'[]')}catch(e){lugares=[]}}
+async function saveLugares(){
+  localStorage.setItem(LUGARES_KEY,JSON.stringify(lugares));
+  try{const r=await apiPost({action:'saveLugares',lugares});if(!r.ok)throw new Error(r.error||'erro')}
+  catch(e){showToast('⚠️ Lugares não sincronizados: '+e.message)}
+}
+
+function setLugarFiltro(f){
+  lugarFiltro=f;
+  document.querySelectorAll('#l-filters .fp').forEach(b=>b.classList.toggle('on',(f==='todos'&&b.textContent.trim()==='Todos')||(f!=='todos'&&b.dataset&&b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+f+"'"))));
+  renderLugares();
+}
+
+function renderLugares(){
+  const list=document.getElementById('lugares-list');
+  const count=document.getElementById('lugares-count');
+  if(!list)return;
+  const pending=lugares.filter(l=>l.status!=='visitei');
+  const f=lugarFiltro==='todos'?pending:pending.filter(l=>l.tipo===lugarFiltro);
+  count.textContent=pending.length+' lugar'+(pending.length!==1?'es':'');
+  if(!f.length){list.innerHTML='<div style="text-align:center;padding:52px 0"><div style="font-size:36px;margin-bottom:12px">🗺️</div><p style="font-size:13px;color:var(--text-3)">Nenhum lugar ainda.<br>Adicione o primeiro!</p></div>';return}
+  list.innerHTML=f.map((l,fi)=>{
+    const gi=lugares.indexOf(l);
+    return `<div class="card ${LPRI_CLS[l.prioridade]||''} fup" style="padding:14px 16px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px">
+          <span style="font-size:18px">${TIPO_EMOJI[l.tipo]||'📍'}</span>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">${l.nome}</div>
+            ${l.cidade?`<div style="font-size:11px;color:var(--text-3);margin-top:1px">📌 ${l.cidade}</div>`:''}
+          </div>
+        </div>
+        <div class="chiprow">
+          <span class="chip chip-n">${LPRI_LABEL[l.prioridade]||''}</span>
+          <span class="chip ${l.status==='visitei'?'chip-g':l.status==='planejando'?'chip-a':'chip-n'}">${LSTATUS_LABEL[l.status]||''}</span>
+          ${l.custo?`<span class="chip chip-b">💰 ${l.custo}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        ${l.link?`<a href="${l.link}" target="_blank" class="ib" style="text-decoration:none"><span class="mi s16">open_in_new</span></a>`:''}
+        <button class="ib" onclick="editLugar(${gi})"><span class="mi s16">edit</span></button>
+        <button class="ib" onclick="deleteLugar(${gi})" style="background:var(--red-dim);border-color:rgba(239,68,68,.2);color:var(--red)"><span class="mi s16">delete</span></button>
+      </div>
+    </div>
+  </div>`;
+  }).join('');
+}
+
+function renderVisitados(){
+  const list=document.getElementById('visitados-list');
+  const count=document.getElementById('visitados-count');
+  if(!list)return;
+  const v=lugares.filter(l=>l.status==='visitei');
+  count.textContent=v.length+' visitado'+(v.length!==1?'s':'');
+  if(!v.length){list.innerHTML='<div style="text-align:center;padding:52px 0"><div style="font-size:36px;margin-bottom:12px">✅</div><p style="font-size:13px;color:var(--text-3)">Nenhum lugar visitado ainda.</p></div>';return}
+  list.innerHTML=v.map(l=>{
+    const gi=lugares.indexOf(l);
+    const stars='⭐'.repeat(l.avaliacao||0)+'☆'.repeat(5-(l.avaliacao||0));
+    return `<div class="card fup" style="padding:14px 16px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">
+          <span style="font-size:18px">${TIPO_EMOJI[l.tipo]||'📍'}</span>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">${l.nome}</div>
+            ${l.cidade?`<div style="font-size:11px;color:var(--text-3);margin-top:1px">📌 ${l.cidade}</div>`:''}
+          </div>
+        </div>
+        ${l.avaliacao?`<div style="font-size:14px;letter-spacing:1px;margin-bottom:4px">${stars}</div>`:''}
+        ${l.visitadoEm?`<div style="font-size:11px;color:var(--text-3);margin-bottom:4px">Visitado em: ${l.visitadoEm}</div>`:''}
+        ${l.comentario?`<div style="font-size:12px;color:var(--text-2);font-style:italic">"${l.comentario}"</div>`:''}
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        ${l.link?`<a href="${l.link}" target="_blank" class="ib" style="text-decoration:none"><span class="mi s16">open_in_new</span></a>`:''}
+        <button class="ib" onclick="editLugar(${gi})"><span class="mi s16">edit</span></button>
+        <button class="ib" onclick="deleteLugar(${gi})" style="background:var(--red-dim);border-color:rgba(239,68,68,.2);color:var(--red)"><span class="mi s16">delete</span></button>
+      </div>
+    </div>
+  </div>`;
+  }).join('');
+}
+
+let chartLugares=null;
+function renderLugaresDash(){
+  const total=lugares.length;
+  const visitados=lugares.filter(l=>l.status==='visitei').length;
+  const pendentes=total-visitados;
+  const pct=total>0?Math.round(visitados/total*100):0;
+  document.getElementById('ldash-total').textContent=total;
+  document.getElementById('ldash-visitados').textContent=visitados;
+  document.getElementById('ldash-pendentes').textContent=pendentes;
+  document.getElementById('ldash-pct').textContent=pct+'%';
+  const tipos=Object.keys(TIPO_LABEL);
+  const counts=tipos.map(t=>lugares.filter(l=>l.tipo===t).length);
+  const chartEl=document.getElementById('chart-lugares');
+  if(!chartEl)return;
+  if(chartLugares)chartLugares.destroy();
+  chartLugares=new Chart(chartEl,{
+    type:'bar',
+    data:{
+      labels:tipos.map(t=>TIPO_EMOJI[t]+' '+TIPO_LABEL[t]),
+      datasets:[{label:'Lugares',data:counts,backgroundColor:'rgba(99,179,237,.6)',borderColor:'rgba(99,179,237,1)',borderWidth:1,borderRadius:6}]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+}
+
+function setLugaresTab(tab){
+  document.getElementById('lugares-aba-lista').style.display=tab==='lista'?'':'none';
+  document.getElementById('lugares-aba-visitados').style.display=tab==='visitados'?'':'none';
+  document.getElementById('lugares-aba-dash').style.display=tab==='dash'?'':'none';
+  document.getElementById('lnav-lista').classList.toggle('on',tab==='lista');
+  document.getElementById('lnav-visitados').classList.toggle('on',tab==='visitados');
+  document.getElementById('lnav-dash').classList.toggle('on',tab==='dash');
+  if(tab==='lista')renderLugares();
+  if(tab==='visitados')renderVisitados();
+  if(tab==='dash')renderLugaresDash();
+}
+
+function toggleVisitadoFields(){
+  const s=document.getElementById('l-status').value;
+  document.getElementById('l-visitado-fields').style.display=s==='visitei'?'':'none';
+}
+
+function setAvaliacaoLugar(n){
+  document.getElementById('l-avaliacao').value=n;
+  document.querySelectorAll('.l-star').forEach(b=>{
+    const v=parseInt(b.dataset.v);
+    b.style.opacity=v<=n?'1':'0.3';
+  });
+}
+
+function openModalLugar(id){
+  document.getElementById('lugar-edit-id').value=id!==undefined?id:'';
+  document.getElementById('modal-lugar-title').textContent=id!==undefined?'Editar lugar':'Novo lugar';
+  const l=id!==undefined?lugares[id]:null;
+  document.getElementById('l-nome').value=l?l.nome:'';
+  document.getElementById('l-tipo').value=l?l.tipo:'viagem';
+  document.getElementById('l-pri').value=l?l.prioridade:'quero';
+  document.getElementById('l-cidade').value=l?l.cidade||'':'';
+  document.getElementById('l-status').value=l?l.status:'quero';
+  document.getElementById('l-custo').value=l?l.custo||'':'';
+  document.getElementById('l-link').value=l?l.link||'':'';
+  document.getElementById('l-comentario').value=l?l.comentario||'':'';
+  document.getElementById('l-visitadoEm').value=l?l.visitadoEm||'':'';
+  const av=l?l.avaliacao||0:0;
+  document.getElementById('l-avaliacao').value=av;
+  document.querySelectorAll('.l-star').forEach(b=>{b.style.opacity=parseInt(b.dataset.v)<=av?'1':'0.3'});
+  toggleVisitadoFields();
+  document.getElementById('modal-lugar').classList.add('open');
+}
+function closeModalLugar(e){if(!e||e.target===document.getElementById('modal-lugar'))document.getElementById('modal-lugar').classList.remove('open')}
+function editLugar(i){openModalLugar(i)}
+function deleteLugar(i){if(!confirm('Remover?'))return;lugares.splice(i,1);saveLugares();renderLugares();renderVisitados()}
+function salvarLugar(){
+  const n=document.getElementById('l-nome').value.trim();
+  if(!n){showToast('⚠️ Digite o nome');return}
+  const eid=document.getElementById('lugar-edit-id').value;
+  const original=eid!==''?lugares[parseInt(eid)]:null;
+  const l={
+    nome:n,
+    tipo:document.getElementById('l-tipo').value,
+    cidade:document.getElementById('l-cidade').value.trim(),
+    prioridade:document.getElementById('l-pri').value,
+    status:document.getElementById('l-status').value,
+    custo:document.getElementById('l-custo').value.trim(),
+    link:document.getElementById('l-link').value.trim(),
+    avaliacao:parseInt(document.getElementById('l-avaliacao').value)||0,
+    comentario:document.getElementById('l-comentario').value.trim(),
+    visitadoEm:document.getElementById('l-visitadoEm').value,
+    criadoEm:original?original.criadoEm:new Date().toISOString()
+  };
+  if(eid!=='')lugares[parseInt(eid)]=l;else lugares.unshift(l);
+  saveLugares();closeModalLugar();
+  const tab=l.status==='visitei'?'visitados':'lista';
+  setLugaresTab(tab);
+  showToast('✅ Lugar salvo!');
 }
 
 // ── Water / Ex ────────────────────────────────────────────────────────────────
@@ -2360,6 +2669,7 @@ function exportarDados(){
     [DESEJOS_KEY]:localStorage.getItem(DESEJOS_KEY),
     [NOTAS_KEY]:  localStorage.getItem(NOTAS_KEY),
     [PLANO_KEY]:  localStorage.getItem(PLANO_KEY),
+    [LUGARES_KEY]:localStorage.getItem(LUGARES_KEY),
   };
   // Exportar também todas as chaves de notificação
   Object.keys(localStorage).forEach(k=>{
@@ -2386,7 +2696,7 @@ function importarDados(event){
       if(!data.versao){showToast('⚠️ Arquivo inválido');return}
       let importados=0;
       // Restaurar cada chave conhecida
-      const chaves=[CACHE_KEY,DESEJOS_KEY,NOTAS_KEY,PLANO_KEY];
+      const chaves=[CACHE_KEY,DESEJOS_KEY,NOTAS_KEY,PLANO_KEY,LUGARES_KEY];
       chaves.forEach(k=>{
         if(data[k]!==undefined&&data[k]!==null){
           localStorage.setItem(k,data[k]);
@@ -2401,6 +2711,7 @@ function importarDados(event){
       loadDesejos();renderDesejos();
       loadNotas();renderNotas();
       loadPlano();
+      loadLugares();if(currentModule==='lugares')renderLugares();
       const cached=loadLocalCache();
       if(cached){applyReg(cached);renderRefeicoes();renderWater();}
       showToast(`✅ ${importados} chaves importadas! Dados restaurados.`);
@@ -2496,7 +2807,7 @@ setInterval(checkNotificacoes,30000);
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init(){
   document.getElementById('plano-date').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
-  loadDesejos();loadNotas();loadPlano();calcDefaultExpanded();renderRefeicoes();renderWater();loadData();renderNotifBtn();
+  loadDesejos();loadNotas();loadPlano();loadLugares();calcDefaultExpanded();renderRefeicoes();renderWater();loadData();renderNotifBtn();
   setTimeout(()=>{const s=document.getElementById('splash');s.classList.add('hide');setTimeout(()=>s.classList.add('gone'),620)},1800);
 }
 init();
