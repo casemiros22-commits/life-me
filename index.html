@@ -1063,8 +1063,9 @@ textarea.ni{resize:none}
       </div>
       <div class="frow">
         <div><label class="nl">Custo estimado</label><input type="text" id="l-custo" placeholder="R$ 0,00" class="ni"/></div>
-        <div><label class="nl">Link</label><input type="url" id="l-link" placeholder="Maps, site..." class="ni"/></div>
+        <div><label class="nl">Mês estimado</label><input type="month" id="l-mes" class="ni"/></div>
       </div>
+      <div><label class="nl">Link</label><input type="url" id="l-link" placeholder="Maps, site..." class="ni"/></div>
       <div id="l-visitado-fields" style="display:none">
         <div style="margin-bottom:10px">
           <label class="nl">Avaliação</label>
@@ -1643,6 +1644,7 @@ function renderLugares(){
           <span class="chip chip-n">${LPRI_LABEL[l.prioridade]||''}</span>
           <span class="chip ${l.status==='visitei'?'chip-g':l.status==='planejando'?'chip-a':'chip-n'}">${LSTATUS_LABEL[l.status]||''}</span>
           ${l.custo?`<span class="chip chip-b">💰 ${l.custo}</span>`:''}
+          ${l.mesEstimado?`<span class="chip chip-n">📅 ${new Date(l.mesEstimado+'-02').toLocaleDateString('pt-BR',{month:'short',year:'numeric'})}</span>`:''}
         </div>
       </div>
       <div style="display:flex;gap:4px;flex-shrink:0">
@@ -1749,6 +1751,7 @@ function openModalLugar(id){
   document.getElementById('l-cidade').value=l?l.cidade||'':'';
   document.getElementById('l-status').value=l?l.status:'quero';
   document.getElementById('l-custo').value=l?l.custo||'':'';
+  document.getElementById('l-mes').value=l?l.mesEstimado||'':'';
   document.getElementById('l-link').value=l?l.link||'':'';
   document.getElementById('l-comentario').value=l?l.comentario||'':'';
   document.getElementById('l-visitadoEm').value=l?l.visitadoEm||'':'';
@@ -1773,6 +1776,7 @@ function salvarLugar(){
     prioridade:document.getElementById('l-pri').value,
     status:document.getElementById('l-status').value,
     custo:document.getElementById('l-custo').value.trim(),
+    mesEstimado:document.getElementById('l-mes').value,
     link:document.getElementById('l-link').value.trim(),
     avaliacao:parseInt(document.getElementById('l-avaliacao').value)||0,
     comentario:document.getElementById('l-comentario').value.trim(),
