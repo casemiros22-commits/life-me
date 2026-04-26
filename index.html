@@ -1358,7 +1358,7 @@ function loadDesejos(){try{desejos=JSON.parse(localStorage.getItem(DESEJOS_KEY)|
 async function saveDesejos(){
   localStorage.setItem(DESEJOS_KEY,JSON.stringify(desejos));
   try{const r=await apiPost({action:'saveDesejos',desejos});if(!r.ok)throw new Error(r.error||'erro')}
-  catch(e){showToast('⚠️ Desejos não sincronizados: '+e.message)}
+  catch(e){console.error('[saveDesejos]',e);showToast('⚠️ Desejos não sincronizados: '+e.message)}
 }
 function setDesejoFiltro(f){
   desejoFiltro=f;
@@ -1408,7 +1408,7 @@ function loadNotas(){try{notas=JSON.parse(localStorage.getItem(NOTAS_KEY)||'[]')
 async function saveNotas(){
   localStorage.setItem(NOTAS_KEY,JSON.stringify(notas));
   try{const r=await apiPost({action:'saveNotas',notas});if(!r.ok)throw new Error(r.error||'erro')}
-  catch(e){showToast('⚠️ Notas não sincronizadas: '+e.message)}
+  catch(e){console.error('[saveNotas]',e);showToast('⚠️ Notas não sincronizadas: '+e.message)}
 }
 function setNotaFiltro(f){
   notaFiltro=f;
@@ -1611,7 +1611,7 @@ function loadLugares(){try{lugares=JSON.parse(localStorage.getItem(LUGARES_KEY)|
 async function saveLugares(){
   localStorage.setItem(LUGARES_KEY,JSON.stringify(lugares));
   try{const r=await apiPost({action:'saveLugares',lugares});if(!r.ok)throw new Error(r.error||'erro')}
-  catch(e){showToast('⚠️ Lugares não sincronizados: '+e.message)}
+  catch(e){console.error('[saveLugares]',e);showToast('⚠️ Lugares não sincronizados: '+e.message)}
 }
 
 function setLugarFiltro(f){
@@ -2254,7 +2254,7 @@ function renderProgresso(){
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
-function showToast(msg,type){const e=type==='error'||msg.includes('⚠️')||msg.includes('Erro')||msg.includes('erro');const t=document.getElementById('toast');t.textContent=msg;t.className=e?'err show':'show';clearTimeout(t._t);t._t=setTimeout(()=>t.className='',2800)}
+function showToast(msg,dur){const e=msg.includes('⚠️')||msg.includes('Erro')||msg.includes('erro');const t=document.getElementById('toast');t.textContent=msg;t.className=e?'err show':'show';clearTimeout(t._t);t._t=setTimeout(()=>t.className='',dur||(e?6000:2800))}
 
 
 
@@ -2286,7 +2286,7 @@ function loadPlano(){
 async function savePlano(){
   localStorage.setItem(PLANO_KEY,JSON.stringify(planoMes));
   try{const r=await apiPost({action:'savePlano',plano:planoMes});if(!r.ok)throw new Error(r.error||'erro')}
-  catch(e){showToast('⚠️ Planejamento não sincronizado: '+e.message)}
+  catch(e){console.error('[savePlano]',e);showToast('⚠️ Planejamento não sincronizado: '+e.message)}
 }
 function getMesData(ym){
   if(!planoMes[ym])planoMes[ym]={orcamento:0,itens:[]};
