@@ -2748,11 +2748,17 @@ function notifFiredToday(id){
 }
 function markNotifFired(id){localStorage.setItem(NOTIF_KEY+'_'+id,new Date().toISOString())}
 
+let swReg=null;
+
 function dispararNotif(titulo,msg,icon){
-  if(!('Notification' in window))return;
-  if(Notification.permission==='granted'){
-    new Notification(titulo,{body:msg,icon:icon||'',badge:icon||'',silent:false});
-  }
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  try{
+    if(swReg){
+      swReg.showNotification(titulo,{body:msg,icon:icon||'',badge:icon||'',silent:false});
+    } else {
+      new Notification(titulo,{body:msg,icon:icon||'',badge:icon||'',silent:false});
+    }
+  }catch(e){console.error('[Notif]',e);}
 }
 
 function checkNotificacoes(){
@@ -2811,6 +2817,11 @@ setInterval(checkNotificacoes,30000);
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init(){
   document.getElementById('plano-date').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js')
+      .then(r=>{swReg=r;console.log('[SW] registrado');})
+      .catch(e=>console.warn('[SW] falhou:',e));
+  }
   loadDesejos();loadNotas();loadPlano();loadLugares();calcDefaultExpanded();renderRefeicoes();renderWater();loadData();renderNotifBtn();
   setTimeout(()=>{const s=document.getElementById('splash');s.classList.add('hide');setTimeout(()=>s.classList.add('gone'),620)},1800);
 }
