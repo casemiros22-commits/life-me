@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Life.me"/>
 <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)"/>
 <meta name="theme-color" content="#f9f9f8" media="(prefers-color-scheme: light)"/>
+<link rel="manifest" href="manifest.json"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -731,8 +732,14 @@ textarea.ni{resize:none}
       🔔 Ativar notificações
     </button>
     <p style="font-size:11px;color:var(--text-3);margin-top:8px;line-height:1.4;text-align:center">
-      Receba lembretes nos horários das refeições (7h, 13h, 16h30, 20h) e para registrar o dia (21h30)
+      No iOS: adicione o app à tela inicial via Safari → Compartilhar → "Adicionar à Tela de Início"
     </p>
+
+    <!-- Configuração de horários de notificação -->
+    <div id="notif-prefs-card" style="display:none;margin-top:14px">
+      <p class="sect-ttl" style="margin-bottom:10px">Horários dos lembretes</p>
+      <div id="notif-prefs-list" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
 
     <!-- Migração de dados -->
     <div class="card" style="margin-top:18px">
@@ -2730,13 +2737,24 @@ function importarDados(event){
 
 // ── Notificações ──────────────────────────────────────────────────────────────
 const NOTIF_KEY='nutrime_notif';
+const NOTIF_PREFS_KEY='nutrime_notif_prefs';
 const NOTIF_HORARIOS=[
-  {id:'desjejum', h:7,  m:0,  msg:'☀️ Hora do café! Lembre de seguir o plano de desjejum.'},
-  {id:'almoco',   h:13, m:0,  msg:'🥗 Hora do almoço! Abra o Nutri.me e registre.'},
-  {id:'lanche',   h:16, m:30, msg:'🍎 Lanche da tarde! Está no plano, não esqueça.'},
-  {id:'jantar',   h:20, m:0,  msg:'🌙 Hora do jantar! Siga o plano da Dra. Valéria.'},
-  {id:'registro', h:21, m:30, msg:'📋 Não esqueça de registrar seu dia no Nutri.me!'},
+  {id:'desjejum', h:7,  m:0,  label:'☀️ Café da manhã', msg:'☀️ Hora do café! Lembre de seguir o plano de desjejum.'},
+  {id:'almoco',   h:13, m:0,  label:'🥗 Almoço',        msg:'🥗 Hora do almoço! Abra o Life.me e registre.'},
+  {id:'lanche',   h:16, m:30, label:'🍎 Lanche da tarde',msg:'🍎 Lanche da tarde! Está no plano, não esqueça.'},
+  {id:'jantar',   h:20, m:0,  label:'🌙 Jantar',        msg:'🌙 Hora do jantar! Siga o plano da Dra. Valéria.'},
+  {id:'registro', h:21, m:30, label:'📋 Registro diário',msg:'📋 Não esqueça de registrar seu dia no Life.me!'},
 ];
+function loadNotifPrefs(){
+  try{
+    const raw=localStorage.getItem(NOTIF_PREFS_KEY);
+    const saved=raw?JSON.parse(raw):{};
+    const out={};
+    NOTIF_HORARIOS.forEach(n=>{out[n.id]=saved[n.id]||{enabled:true,h:n.h,m:n.m}});
+    return out;
+  }catch(e){const out={};NOTIF_HORARIOS.forEach(n=>{out[n.id]={enabled:true,h:n.h,m:n.m}});return out;}
+}
+function saveNotifPrefs(prefs){localStorage.setItem(NOTIF_PREFS_KEY,JSON.stringify(prefs))}
 
 function notifFiredToday(id){
   const key=NOTIF_KEY+'_'+id;
@@ -2763,14 +2781,14 @@ function dispararNotif(titulo,msg,icon){
 
 function checkNotificacoes(){
   if(!('Notification' in window)||Notification.permission!=='granted')return;
-  // Usa hora LOCAL do dispositivo (independente de fuso)
-  const now=new Date();
-  const hh=now.getHours(), mm=now.getMinutes();
+  const now=new Date(),hh=now.getHours(),mm=now.getMinutes();
+  const prefs=loadNotifPrefs();
   NOTIF_HORARIOS.forEach(n=>{
-    // Janela de 1 minuto exato
-    if(hh===n.h&&mm===n.m&&!notifFiredToday(n.id)){
+    const p=prefs[n.id]||{enabled:true,h:n.h,m:n.m};
+    if(!p.enabled)return;
+    if(hh===p.h&&mm===p.m&&!notifFiredToday(n.id)){
       markNotifFired(n.id);
-      dispararNotif('Nutri.me',n.msg);
+      dispararNotif('Life.me',n.msg);
     }
   });
 }
@@ -2809,6 +2827,39 @@ function renderNotifBtn(){
     btn.textContent='🔔 Ativar notificações';
     btn.style.background='var(--bg-2)';btn.style.color='var(--text-2)';btn.style.borderColor='var(--line-2)';
   }
+  renderNotifPrefs();
+}
+
+function renderNotifPrefs(){
+  const card=document.getElementById('notif-prefs-card');
+  const list=document.getElementById('notif-prefs-list');
+  if(!card||!list)return;
+  if(getNotifStatus()!=='granted'){card.style.display='none';return;}
+  card.style.display='';
+  const prefs=loadNotifPrefs();
+  list.innerHTML=NOTIF_HORARIOS.map(n=>{
+    const p=prefs[n.id];
+    const hStr=String(p.h).padStart(2,'0')+':'+String(p.m).padStart(2,'0');
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-2);border-radius:var(--r-md);border:1px solid var(--line-2)">
+      <label style="display:flex;align-items:center;gap:0;cursor:pointer;flex-shrink:0">
+        <input type="checkbox" id="np-on-${n.id}" ${p.enabled?'checked':''} onchange="salvarNotifPref('${n.id}')" style="width:18px;height:18px;accent-color:var(--hi);cursor:pointer"/>
+      </label>
+      <span style="flex:1;font-size:13px;font-weight:500;color:var(--text)">${n.label}</span>
+      <input type="time" id="np-time-${n.id}" value="${hStr}" onchange="salvarNotifPref('${n.id}')" style="border:1px solid var(--line-2);background:var(--bg-3);color:var(--text);border-radius:6px;padding:4px 6px;font-size:13px;font-family:'Inter',sans-serif"/>
+    </div>`;
+  }).join('');
+}
+
+function salvarNotifPref(id){
+  const prefs=loadNotifPrefs();
+  const onEl=document.getElementById('np-on-'+id);
+  const timeEl=document.getElementById('np-time-'+id);
+  if(!onEl||!timeEl)return;
+  const [hh,mm]=timeEl.value.split(':').map(Number);
+  prefs[id]={enabled:onEl.checked,h:hh||0,m:mm||0};
+  saveNotifPrefs(prefs);
+  localStorage.removeItem(NOTIF_KEY+'_'+id);
+  showToast('✅ Lembrete atualizado');
 }
 
 // Checar a cada 30 segundos
