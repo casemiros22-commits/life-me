@@ -1364,8 +1364,9 @@ let desejos=[],desejoFiltro='todos';const DESEJOS_KEY='nutrime_desejos';
 function loadDesejos(){try{desejos=JSON.parse(localStorage.getItem(DESEJOS_KEY)||'[]')}catch(e){desejos=[]}}
 async function saveDesejos(){
   localStorage.setItem(DESEJOS_KEY,JSON.stringify(desejos));
-  try{const r=await apiPost({action:'saveDesejos',desejos});if(!r.ok)throw new Error(r.error||'erro')}
-  catch(e){console.error('[saveDesejos]',e);showToast('⚠️ Desejos não sincronizados: '+e.message)}
+  setSyncIcon('s');
+  try{const r=await apiPost({action:'saveDesejos',desejos});if(!r.ok)throw new Error(r.error||'erro');setSyncIcon('ok')}
+  catch(e){setSyncIcon('err');console.error('[saveDesejos]',e);showToast('⚠️ Desejos não sincronizados: '+e.message)}
 }
 function setDesejoFiltro(f){
   desejoFiltro=f;
@@ -1414,8 +1415,9 @@ let notas=[],notaFiltro='todas';const NOTAS_KEY='nutrime_notas';
 function loadNotas(){try{notas=JSON.parse(localStorage.getItem(NOTAS_KEY)||'[]')}catch(e){notas=[]}}
 async function saveNotas(){
   localStorage.setItem(NOTAS_KEY,JSON.stringify(notas));
-  try{const r=await apiPost({action:'saveNotas',notas});if(!r.ok)throw new Error(r.error||'erro')}
-  catch(e){console.error('[saveNotas]',e);showToast('⚠️ Notas não sincronizadas: '+e.message)}
+  setSyncIcon('s');
+  try{const r=await apiPost({action:'saveNotas',notas});if(!r.ok)throw new Error(r.error||'erro');setSyncIcon('ok')}
+  catch(e){setSyncIcon('err');console.error('[saveNotas]',e);showToast('⚠️ Notas não sincronizadas: '+e.message)}
 }
 function setNotaFiltro(f){
   notaFiltro=f;
@@ -1597,7 +1599,7 @@ async function loadData(){
       } else if(lugares.length>0){
         apiPost({action:'saveLugares',lugares}).catch(()=>{});
       }
-      state.syncedAt=new Date().toLocaleTimeString('pt-BR');document.getElementById('sync-status').textContent='Último sync: '+state.syncedAt+' · '+state.registros.length+' registros';const tr=state.registros.find(r=>r.date===today);if(tr){applyReg(tr);localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,reg:tr}))}calcDefaultExpanded();renderRefeicoes();renderWater();setSyncIcon('ok');showToast('✅ Sincronizado — '+state.registros.length+' registros')}}
+      state.syncedAt=new Date().toLocaleTimeString('pt-BR');document.getElementById('sync-status').textContent='Último sync: '+state.syncedAt+' · '+state.registros.length+' registros';const tr=state.registros.find(r=>r.date===today);if(tr){applyReg(tr);localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,reg:tr}))}calcDefaultExpanded();renderRefeicoes();renderWater();setSyncIcon('ok');showToast('✅ Sincronizado')}}
   catch(e){
     setSyncIcon('err');
     console.error('[loadData] ERRO:',e);
@@ -1618,8 +1620,9 @@ const LSTATUS_LABEL={quero:'🗺️ Quero ir',planejando:'⏳ Planejando',visite
 function loadLugares(){try{lugares=JSON.parse(localStorage.getItem(LUGARES_KEY)||'[]')}catch(e){lugares=[]}}
 async function saveLugares(){
   localStorage.setItem(LUGARES_KEY,JSON.stringify(lugares));
-  try{const r=await apiPost({action:'saveLugares',lugares});if(!r.ok)throw new Error(r.error||'erro')}
-  catch(e){console.error('[saveLugares]',e);showToast('⚠️ Lugares não sincronizados: '+e.message)}
+  setSyncIcon('s');
+  try{const r=await apiPost({action:'saveLugares',lugares});if(!r.ok)throw new Error(r.error||'erro');setSyncIcon('ok')}
+  catch(e){setSyncIcon('err');console.error('[saveLugares]',e);showToast('⚠️ Lugares não sincronizados: '+e.message)}
 }
 
 function setLugarFiltro(f){
@@ -2288,13 +2291,16 @@ function loadPlano(){
     const raw=localStorage.getItem(PLANO_KEY);
     planoMes=raw?JSON.parse(raw):{};
     if(typeof planoMes!=='object'||Array.isArray(planoMes))planoMes={};
+    // Garante que todo item tenha criadoEm (ID estável para sincronização)
+    Object.values(planoMes).forEach(md=>{(md.itens||[]).forEach((it,i)=>{if(!it.criadoEm)it.criadoEm='p'+Date.now()+'_'+i+Math.random().toString(36).slice(2,5);})});
   }catch(e){planoMes={}}
   if(!planoMesAtual)planoMesAtual=todayYM();
 }
 async function savePlano(){
   localStorage.setItem(PLANO_KEY,JSON.stringify(planoMes));
-  try{const r=await apiPost({action:'savePlano',plano:planoMes});if(!r.ok)throw new Error(r.error||'erro')}
-  catch(e){console.error('[savePlano]',e);showToast('⚠️ Planejamento não sincronizado: '+e.message)}
+  setSyncIcon('s');
+  try{const r=await apiPost({action:'savePlano',plano:planoMes});if(!r.ok)throw new Error(r.error||'erro');setSyncIcon('ok')}
+  catch(e){setSyncIcon('err');console.error('[savePlano]',e);showToast('⚠️ Planejamento não sincronizado: '+e.message)}
 }
 function getMesData(ym){
   if(!planoMes[ym])planoMes[ym]={orcamento:0,itens:[]};
@@ -2346,15 +2352,17 @@ function salvarPlanoItem(){
   const nome=document.getElementById('plano-item-nome').value.trim();
   if(!nome){showToast('⚠️ Digite o nome');return}
   const valor=parseFloat((document.getElementById('plano-item-valor').value||'0').replace(',','.'));
+  const md=getMesData(planoMesAtual);
+  const idx=document.getElementById('plano-edit-idx').value;
+  const original=idx!==''?md.itens[parseInt(idx)]:null;
   const item={
     nome,
     categoria:document.getElementById('plano-item-cat').value,
     valor:isNaN(valor)?0:valor,
     prioridade:document.getElementById('plano-item-prioridade').value,
-    comprado:document.getElementById('plano-item-comprado').checked
+    comprado:document.getElementById('plano-item-comprado').checked,
+    criadoEm:original?original.criadoEm:new Date().toISOString()
   };
-  const md=getMesData(planoMesAtual);
-  const idx=document.getElementById('plano-edit-idx').value;
   if(idx!=='')md.itens[parseInt(idx)]=item;else md.itens.push(item);
   savePlano();closeModalPlanoItem();renderPlanejamento();showToast('✅ Item salvo!');
 }
