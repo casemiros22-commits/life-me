@@ -1584,9 +1584,10 @@ async function loadData(){
       } else if(notas.length>0){
         apiPost({action:'saveNotas',notas}).catch(()=>{});
       }
+      console.log('[loadData] plano keys:',data.plano?Object.keys(data.plano).length:0);
       if(data.plano&&typeof data.plano==='object'&&!Array.isArray(data.plano)&&Object.keys(data.plano).length>0){
         planoMes=data.plano;localStorage.setItem(PLANO_KEY,JSON.stringify(planoMes));
-        if(currentModule==='desejos')renderPlanejamento();
+        if(currentModule==='desejos'){const ativos=['plano','todos','dash'].filter(t=>document.getElementById('compras-aba-'+t)?.style.display!=='none');setComprasTab(ativos[0]||'plano');}
       } else if(Object.keys(planoMes).length>0){
         apiPost({action:'savePlano',plano:planoMes}).catch(()=>{});
       }
